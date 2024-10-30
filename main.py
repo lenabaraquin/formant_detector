@@ -1,4 +1,3 @@
-from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
 import wave
@@ -10,12 +9,12 @@ def get_spectrum(waveform:list)->list:
     return spectrum
 
 def get_log10_magnitude_spectrum(spectrum:list)->list:
-    magnitude_spectrum = []
+    log10_magnitude_spectrum = []
     for i in spectrum:
         i = abs(i)
         i = np.log10(i)
-        magnitude_spectrum.append(i)
-    return magnitude_spectrum
+        log10_magnitude_spectrum.append(i)
+    return log10_magnitude_spectrum
 
 def get_power_spectrum(spectrum:list)->list:
     power_spectrum = []
@@ -41,8 +40,18 @@ def lowpass_lifter(cepstrum:list, cutoff_quefrency:int=30)->list:
     return liftred_cepstrum
 
 def get_liftred_spectrum(liftred_cepstrum:list)->list:
-    liftred_spectrum = np.abs(np.fft.rfft(liftred_cepstrum))
-    return liftred_spectrum
+    smoothed_spectrum = np.abs(np.fft.rfft(liftred_cepstrum))
+    return smoothed_spectrum
+
+def get_local_maxima(signal:list)->list:
+    local_maxima = []
+    for i in range(1, len(signal) - 1):
+        if signal[i] > signal[i-1] and signal[i] > signal[i+1]:
+            local_maxima.append(i)
+    return local_maxima
+
+def get_formants(smoothed_spectrum:list)->list:
+    return get_local_maxima(smoothed_spectrum)
 
 def get_waveform(sound)->list:
     nframes = sound.getnframes()
@@ -64,12 +73,6 @@ def get_waveform(sound)->list:
     #    samples = struct.unpack(fmt * nframes, frames)
     return samples
 
-def get_local_maxima(signal:list)->list:
-    local_maxima = []
-    for i in range(1, len(signal) - 1):
-        if signal[i] > signal[i-1] and signal[i] > signal[i+1]:
-            local_maxima.append(i)
-    return local_maxima
 
 file_name = 'test_sounds/aaa.wav'
 with wave.open(file_name, 'rb') as sound:
@@ -78,18 +81,16 @@ with wave.open(file_name, 'rb') as sound:
     framerate = sound.getframerate()
     nframes = sound.getnframes()
 
-    filtred_power_spectrum = signal.butter(10, 0.5, fs=framerate)
-
-    fig, ax = plt.subplots()
     waveform = get_waveform(sound)
     spectrum = get_spectrum(waveform)
     log10_magnitude_spectrum = get_log10_magnitude_spectrum(spectrum)
     power_spectrum  = get_power_spectrum(spectrum)
     cepstrum = get_cepstrum(power_spectrum)
     liftred_cepstrum = lowpass_lifter(cepstrum)
-    liftred_spectrum = get_liftred_spectrum(liftred_cepstrum)
-    to_plot = liftred_spectrum
+    smoothed_spectrum = get_liftred_spectrum(liftred_cepstrum)
+    formants = get_formants(smoothed_spectrum)
+    to_plot = smoothed_spectrum
 
+    fig, ax = plt.subplots()
     ax.plot(to_plot)
     plt.show()
-    print(get_local_maxima(liftred_spectrum))

@@ -5,8 +5,7 @@ import struct
 
 
 def get_spectrum(waveform:list, samplerate:int)->list:
-    spectrum = np.fft.rfft(waveform, samplerate)
-    return spectrum
+    return np.fft.rfft(waveform, samplerate)
 
 def get_cepstrum(spectrum:list)->list:
     return np.fft.ifft(np.log10(np.abs(spectrum)))
@@ -39,6 +38,9 @@ def framing(waveform:list, samplerate:int, frame_duration:float=0.1)->list:
     frame_size = int(samplerate * frame_duration)
     return [waveform[i:i + frame_size] for i in range(0, len(waveform), frame_size//2)]
 
+def hamming_windowing(frame:list)->list:
+    return frame*np.hamming(len(frame))
+
 def get_waveform(sound, sampwidth)->list:
     nframes = sound.getnframes()
     frames = sound.readframes(nframes)
@@ -64,7 +66,8 @@ with wave.open(file_name, 'rb') as sound:
     waveform = get_waveform(sound, sampwidth)
     frames = framing(waveform, samplerate, frame_duration=0.1)
     for i in range(len(frames)):
-        spectral_envelope = get_cepstrum_spectral_envelope(frames[i], samplerate, 35)
+        frame = hamming_windowing(frames[i])
+        spectral_envelope = get_cepstrum_spectral_envelope(frame, samplerate, 45)
         formants = get_formants(spectral_envelope)
         print(formants)
 

@@ -65,13 +65,26 @@ with wave.open(file_name, 'rb') as sound:
 
     waveform = get_waveform(sound, sampwidth)
     frames = framing(waveform, samplerate, frame_duration=0.1)
+    list_of_formants = []
     for i in range(len(frames)):
         frame = hamming_windowing(frames[i])
         spectral_envelope = get_cepstrum_spectral_envelope(frame, samplerate, 45)
         formants = get_formants(spectral_envelope)
-        print(formants)
+        list_of_formants.append(formants)
 
-    to_plot = spectral_envelope
-    fig, ax = plt.subplots()
-    ax.plot(to_plot)
-    plt.show()
+    for i in range(len(list_of_formants)-1):
+        print(list_of_formants[i])
+        for j in range(len(list_of_formants[i])):
+            r = 0.1
+            interval = range(int(list_of_formants[i][j]-list_of_formants[i][j]*r), int(list_of_formants[i][j]-list_of_formants[i][j]*r))
+#            if list_of_formants[i+1][j] not in interval:
+#                list_of_formants[i+1].insert(j, 0)
+
+
+
+
+
+#    to_plot = spectral_envelope
+#    fig, ax = plt.subplots()
+#    ax.plot(to_plot)
+#    plt.show()

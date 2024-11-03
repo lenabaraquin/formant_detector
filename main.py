@@ -53,20 +53,12 @@ for i in range(len(frames)):
     formants = get_formants(spectral_envelope)
     list_of_formants.append(formants)
 
-for i in range(len(list_of_formants)-1):
-    print(list_of_formants[i])
-#    k = 0
-#    for j in range(len(list_of_formants[i])):
-#        if i==0 or i==1:
-#            print(f"ligne {i}, colonne {j}")
-#            print(list_of_formants[i])
-#            print(list_of_formants[i+1])
-#            print(list_of_formants[i+1][j])
-#        r = 0.1
-#        interval = range(int(list_of_formants[i][j]-list_of_formants[i][j]*r), int(list_of_formants[i][j]-list_of_formants[i][j]*r))
-#        if list_of_formants[i+1][j-k] not in interval:
-#            list_of_formants[i+1].insert(j, 0)
-#            k+=1 #it seems to read unmodified row i+1, so the column counter has to be increase
+formants_in_time = [] #vectors in the time-frequency space
+for i in range(len(list_of_formants)):
+    for j in range(len(list_of_formants[i])):
+        formants_in_time.append((i,list_of_formants[i][j]))
+print(formants_in_time)
+
 
 #    to_plot = spectral_envelope
 #    fig, ax = plt.subplots()

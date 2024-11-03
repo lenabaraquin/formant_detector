@@ -59,6 +59,16 @@ for i in range(len(list_of_formants)):
         formants_in_time.append((i,list_of_formants[i][j]))
 print(formants_in_time)
 
+for i in range(len(formants_in_time)):
+    (time, formant)=formants_in_time[i]
+    #formant_set = {(time, formant)}
+    #def set de tous les formants des couples de forme (time+1, formant)
+    #def set formant-r, formant+r
+    #set1.intersection(set2)
+    #new_formant = si taille 1, continuer, si taille plus de 1 prendre le plus proche de formant, si inter vide, stop et passe à formants_in_time[i+1]
+    #formant_set.append(new_formant)
+    #recommancer avec (time+1, formant) jusqu'a ce que l'intersection soit vide
+    #envoyer formant_set dans une liste à return 
 
 #    to_plot = spectral_envelope
 #    fig, ax = plt.subplots()

@@ -44,31 +44,49 @@ def framing(waveform:list, samplerate:int, frame_duration:float=0.1)->list:
 def hamming_windowing(frame:list)->list:
     return list(frame*np.hamming(len(frame)))
 
-def pseudo_distance(x:tuple, y:tuple, r:float)->float:
-    x_1 = x[0]
-    x_2 = x[1]
-    y_1 = y[0]
-    y_2 = y[1]
-    d = np.sqrt(r*(x_1-y_1)**2 + (1/r)*(x_2-y_2)**2)
-    return d
-
-def get_nearest_point(point:tuple, points_to_compare:list)->tuple:
-    r = 0.1
-    dist_of_nearest_point = (pseudo_distance(point, points_to_compare[0], r),(0, 0))
-    for x in points_to_compare:
-        d = pseudo_distance(point, x, r)
-        if d < dist_of_nearest_point[0]:
-            dist_of_nearest_point = (d, x)
-    return dist_of_nearest_point[1]
-
 def plot_ball():
     to_plot=([], [])
     for i in np.arange(-2, 2, 0.01):
         for j in np.arange(-2, 2, 0.01):
-            if 0.9 < pseudo_distance((0,0), (i,j), 0.1) < 1.1:
+            if 0.9 < weighted_distance((0,0), (i,j)) < 1.1:
                 to_plot[0].append(i)
                 to_plot[1].append(j)
     return to_plot
+
+def weighted_distance(X1, X2, x_weight=0.5, y_weight=1.0):
+    dx = np.abs(X1[0] - X2[0]) * x_weight
+    dy = np.abs(X1[1] - X2[1]) * y_weight
+    return np.amax([dx, dy])
+
+def find_sequences(points, x_weight=0.5, y_weight=1.0, max_distance=300):
+    sequences = []
+    unvisited_points = set(points)
+    
+    while unvisited_points:
+        current_sequence = []
+        point = unvisited_points.pop()
+        current_sequence.append(point)
+        
+        while True:
+            nearest_point = None
+            min_dist = float('inf')
+            
+            for other in unvisited_points:
+                dist = weighted_distance(point, other, x_weight, y_weight)
+                if dist < min_dist and dist <= max_distance:
+                    nearest_point = other
+                    min_dist = dist
+            
+            if nearest_point:
+                current_sequence.append(nearest_point)
+                unvisited_points.remove(nearest_point)
+                point = nearest_point
+            else:
+                break
+        
+        sequences.append(current_sequence)
+    
+    return sequences
 
 file_path = 'test_sounds/aaa.wav'
 (waveform, samplerate) = get_waveform(file_path)
@@ -83,16 +101,9 @@ for i in range(len(frames)):
 formants_in_time = [] #vectors in the time-frequency space
 for i in range(len(list_of_formants)):
     for j in range(len(list_of_formants[i])):
-        formants_in_time.append((i, list_of_formants[i][j], flag:=True))
-print(formants_in_time)
+        formants_in_time.append((i, list_of_formants[i][j]))
 
-#r = 0.1
-for (time, formant, flag) formants_in_time:
-    if flag:
-        formant_set = {(time, formant)}
-        #aller voir le point le plus proche parmi les flag true 
-        # si inferieur à seuil, alors ajouter dans le set et passer le flag en false, sinon exit, ajouter formant_set à ce qui sera return et i suivant (avec une while ?)
+seq = find_sequences(formants_in_time)
+for i in seq:
+    print(i)
 
-#to_plot=plot_ball()
-#plt.plot(to_plot[0], to_plot[1], 'o')
-#plt.show()

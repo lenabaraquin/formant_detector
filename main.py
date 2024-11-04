@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import struct
 import wave
 import numpy as np
@@ -44,21 +43,12 @@ def framing(waveform:list, samplerate:int, frame_duration:float=0.1)->list:
 def hamming_windowing(frame:list)->list:
     return list(frame*np.hamming(len(frame)))
 
-def plot_ball():
-    to_plot=([], [])
-    for i in np.arange(-2, 2, 0.01):
-        for j in np.arange(-2, 2, 0.01):
-            if 0.9 < weighted_distance((0,0), (i,j)) < 1.1:
-                to_plot[0].append(i)
-                to_plot[1].append(j)
-    return to_plot
-
-def weighted_distance(X1, X2, x_weight=0.5, y_weight=1.0):
-    dx = np.abs(X1[0] - X2[0]) * x_weight
-    dy = np.abs(X1[1] - X2[1]) * y_weight
+def weighted_distance(X1, X2, weight=0.5):
+    dx = np.abs(X1[0] - X2[0]) * weight
+    dy = np.abs(X1[1] - X2[1]) * (1/weight)
     return np.amax([dx, dy])
 
-def find_sequences(points, x_weight=0.5, y_weight=1.0, max_distance=300):
+def find_sequences(points, weight=0.5, max_distance=300):
     sequences = []
     unvisited_points = set(points)
     
@@ -72,7 +62,7 @@ def find_sequences(points, x_weight=0.5, y_weight=1.0, max_distance=300):
             min_dist = float('inf')
             
             for other in unvisited_points:
-                dist = weighted_distance(point, other, x_weight, y_weight)
+                dist = weighted_distance(point, other, weight)
                 if dist < min_dist and dist <= max_distance:
                     nearest_point = other
                     min_dist = dist
@@ -83,10 +73,15 @@ def find_sequences(points, x_weight=0.5, y_weight=1.0, max_distance=300):
                 point = nearest_point
             else:
                 break
-        
         sequences.append(current_sequence)
-    
     return sequences
+
+def get_mean_formants_list(formants_sequences:list)->list:
+    mean_formants_list = []
+    for i in formants_sequences:
+        mean_formants_list.append(np.mean(i))
+    mean_formants_list.sort()
+    return mean_formants_list
 
 file_path = 'test_sounds/aaa.wav'
 (waveform, samplerate) = get_waveform(file_path)
@@ -104,6 +99,5 @@ for i in range(len(list_of_formants)):
         formants_in_time.append((i, list_of_formants[i][j]))
 
 seq = find_sequences(formants_in_time)
-for i in seq:
-    print(i)
-
+mean_formants_list = get_mean_formants_list(seq)
+print(mean_formants_list)

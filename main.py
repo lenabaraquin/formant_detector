@@ -2,8 +2,8 @@ import struct
 import wave
 import numpy as np
 
-
 def get_waveform(file_path:str)->tuple:
+    """from a file path give the (list(samples), samplerate) tuple"""
     with wave.open(file_path, 'rb') as sound:
         #nchannels = sound.getnchannels() if is stereo sound
         sampwidth = sound.getsampwidth()
@@ -22,6 +22,7 @@ def get_waveform(file_path:str)->tuple:
     return (list(samples), samplerate)
 
 def get_cepstrum_spectral_envelope(waveform:list, samplerate:int, lifter_cutoff_quefrency:int=35):
+    """from a waveform give his spectral envelope with the cepstrum method"""
     spectrum = np.fft.rfft(waveform, samplerate)
     log10_magnitude_spectrum = np.log10(np.abs(spectrum))
     cepstrum = np.fft.irfft(log10_magnitude_spectrum)
@@ -37,10 +38,12 @@ def get_formants(spectral_envelope:list)->list:
     return formants
 
 def framing(waveform:list, samplerate:int, frame_duration:float=0.1)->list:
+    """split the waveform in several frames"""
     frame_size = int(samplerate * frame_duration)
     return [waveform[i:i + frame_size] for i in range(0, len(waveform), frame_size//2)]
 
 def hamming_windowing(frame:list)->list:
+    """windowing with the hamming function"""
     return list(frame*np.hamming(len(frame)))
 
 def from_file_get_formant_matrix(file_path:str, window_duration:float, cepstrum_cutoff_quefrency:int)->list:

@@ -131,12 +131,30 @@ def ajust_cutoff_quefrency(expected_first_formants:list, file_path:str)->tuple:
 
 
 file_path = 'test_sounds/aaa.wav'
-formant_matrix = from_file_get_formant_matrix(file_path, window_duration=0.1, cepstrum_cutoff_quefrency=30)
-mean_formants_list = from_formant_matrix_get_mean_formants(formant_matrix, squeezing_coefficient=0.5, max_dist_to_regroup=300)
-print(mean_formants_list)
+window_duration = 0.1
+cepstrum_cutoff_quefrency = 30
 
-expected_first_formants = [930, 1400, 2700]
-print(ajust_cutoff_quefrency(expected_first_formants, file_path))
+(waveform, samplerate) = get_waveform(file_path)
+frames = framing(waveform, samplerate, frame_duration=window_duration)
+
+formants_class = []
+for i in range(len(frames)):
+    frame = hamming_windowing(frames[i])
+    spectral_envelope = get_cepstrum_spectral_envelope(frame, samplerate, cepstrum_cutoff_quefrency)
+    formants = get_formants(list(spectral_envelope))
+    if i == 0:
+        for current_formant in formants:
+            formants_class.append([current_formant])
+    if i != 0:
+        for current_formant in formants:
+            min_distance, nearest_formant = float('inf'), 0
+            nearest_formant_class = [] #init
+            for formant_class in formants_class:
+                if np.abs(formant_class[-1] - current_formant) < min_distance:
+                    min_distance, nearest_formant_class = np.abs(formant_class[-1] - current_formant), formant_class
+            nearest_formant_class.append(current_formant)
+            print(nearest_formant_class)
+        print(formants)
 
 
 

@@ -137,25 +137,27 @@ cepstrum_cutoff_quefrency = 30
 (waveform, samplerate) = get_waveform(file_path)
 frames = framing(waveform, samplerate, frame_duration=window_duration)
 
-formants_class = []
-for i in range(len(frames)):
-    frame = hamming_windowing(frames[i])
-    spectral_envelope = get_cepstrum_spectral_envelope(frame, samplerate, cepstrum_cutoff_quefrency)
-    formants = get_formants(list(spectral_envelope))
-    if i == 0:
-        for current_formant in formants:
-            formants_class.append([current_formant])
-    if i != 0:
-        for current_formant in formants:
-            min_distance, nearest_formant = float('inf'), 0
-            nearest_formant_class = [] #init
-            for formant_class in formants_class:
-                if np.abs(formant_class[-1] - current_formant) < min_distance:
-                    min_distance, nearest_formant_class = np.abs(formant_class[-1] - current_formant), formant_class
-            nearest_formant_class.append(current_formant)
-            print(nearest_formant_class)
-        print(formants)
+def get_formants_class(frames:list, samplerate:int, cepstrum_cutoff_quefrency=35)->list:
+    """return a list of same class formant lists"""
+    formants_class = []
+    for i in range(len(frames)):
+        frame = hamming_windowing(frames[i])
+        spectral_envelope = get_cepstrum_spectral_envelope(frame, samplerate, cepstrum_cutoff_quefrency)
+        formants = get_formants(list(spectral_envelope))
+        if i == 0:
+            for current_formant in formants:
+                formants_class.append([current_formant])
+        if i != 0:
+            for current_formant in formants:
+                min_distance = float('inf')
+                nearest_formant_class = [] #init
+                for formant_class in formants_class:
+                    if np.abs(formant_class[-1] - current_formant) < min_distance:
+                        min_distance, nearest_formant_class = np.abs(formant_class[-1] - current_formant), formant_class
+                nearest_formant_class.append(current_formant)
+    return formants_class
 
+print(get_formants_class(frames, samplerate))
 
 
 

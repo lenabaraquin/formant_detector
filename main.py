@@ -104,10 +104,10 @@ def get_mean_formants_list(formants_sequences:list)->list:
     mean_formants_list.sort()
     return mean_formants_list
 
-def from_formant_matrix_get_mean_formants(formant_matrix:list, squeezing_coefficient:float, max_dist_to_regroup:int)->list:
-    formants_in_time = take_formants_in_time_frequency_space(formant_matrix)
-    formants_sequences = find_sequences(formants_in_time, squeezing_coefficient, max_dist_to_regroup)
-    mean_formants_list = get_mean_formants_list(formants_sequences)
+def from_formants_class_get_mean_formants(formants_class:list)->list:
+    mean_formants_list = []
+    for formant_class in formants_class:
+        mean_formants_list.append(np.mean(formant_class))
     return mean_formants_list
 
 def list_distance(list_1:list, list_2:list)->float:
@@ -120,22 +120,14 @@ def ajust_cutoff_quefrency(expected_first_formants:list, file_path:str)->tuple:
     to_compare = (float('inf'), 0)
     for i in range(20, 50):
         print("plop")
-        formant_matrix = from_file_get_formant_matrix(file_path, window_duration=0.1, cepstrum_cutoff_quefrency=i)
-        mean_formants_list = from_formant_matrix_get_mean_formants(formant_matrix, squeezing_coefficient=0.5, max_dist_to_regroup=300)
+        formants_class = get_formants_class(frames, samplerate, i)
+        mean_formants_list = from_formants_class_get_mean_formants(formants_class)
         dist = list_distance(expected_first_formants, mean_formants_list)
         print(dist)
         if dist < to_compare[0]:
             to_compare = (dist, i)
             print(to_compare)
     return to_compare
-
-
-file_path = 'test_sounds/aaa.wav'
-window_duration = 0.1
-cepstrum_cutoff_quefrency = 30
-
-(waveform, samplerate) = get_waveform(file_path)
-frames = framing(waveform, samplerate, frame_duration=window_duration)
 
 def get_formants_class(frames:list, samplerate:int, cepstrum_cutoff_quefrency=35)->list:
     """return a list of same class formant lists"""
@@ -157,8 +149,15 @@ def get_formants_class(frames:list, samplerate:int, cepstrum_cutoff_quefrency=35
                 nearest_formant_class.append(current_formant)
     return formants_class
 
-print(get_formants_class(frames, samplerate))
 
+file_path = 'test_sounds/aaa.wav'
+window_duration = 0.1
+cepstrum_cutoff_quefrency = 30
+
+(waveform, samplerate) = get_waveform(file_path)
+frames = framing(waveform, samplerate, frame_duration=window_duration)
+print(get_formants_class(frames, samplerate))
+print(get_mean_formants_list(get_formants_class(frames, samplerate)))
 
 
 

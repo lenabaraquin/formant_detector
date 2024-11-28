@@ -91,13 +91,12 @@ class Formants:
                 formant_vectors.append((t, formant))
         return formant_vectors
 
-aaa = Formants("test_sounds/aaa.wav", 0.01, 35)
-iii = Formants("test_sounds/iii.wav", 0.01, 35)
-uuu = Formants("test_sounds/uuu.wav", 0.01, 35)
-
-aaa_formants = aaa.get_time_formant_vectors()
-iii_formants = iii.get_time_formant_vectors()
-uuu_formants = uuu.get_time_formant_vectors()
+    def get_mean_formants(self)->list:
+        formants_class = self.get_formants_class()
+        mean_formants = []
+        for formant_class in formants_class:
+            mean_formants.append(np.mean(formant_class))
+        return mean_formants
 
 def plot_2D_vectors_from_list(vector_list:list, graph_title:str)->None:
     x_coords = [point[0] for point in vector_list]
@@ -109,9 +108,16 @@ def plot_2D_vectors_from_list(vector_list:list, graph_title:str)->None:
     plt.title(graph_title)
     plt.show()
 
-plot_2D_vectors_from_list(aaa_formants, "formants de [a]")
-plot_2D_vectors_from_list(iii_formants, "formants de [i]")
-plot_2D_vectors_from_list(uuu_formants, "formants de [u]")
+
+aaa = Formants("test_sounds/aaa.wav", 0.01, 35)
+iii = Formants("test_sounds/iii.wav", 0.01, 35)
+uuu = Formants("test_sounds/uuu.wav", 0.01, 35)
+
+aaa_formants = aaa.get_time_formant_vectors()
+iii_formants = iii.get_time_formant_vectors()
+uuu_formants = uuu.get_time_formant_vectors()
+
+
 
 
 

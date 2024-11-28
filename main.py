@@ -98,6 +98,18 @@ class Formants:
             mean_formants.append(np.mean(formant_class))
         return mean_formants
 
+def ajust_cutoff_quefrency(file_path:str, frame_duration:float=0.1, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=50):
+    (dist, optimum_quefrency) = float('inf'), 0
+    for quefrency in range(min_quefrency, max_quefrency):
+        formants_for_quefrency = Formants(file_path, frame_duration, quefrency)
+        mean_formants_for_quefrency = formants_for_quefrency.get_mean_formants()
+        diff = 0
+        for i in range(len(expected_first_formants)):
+            diff += np.abs(expected_first_formants[i] - mean_formants_for_quefrency[i])
+        if diff < dist:
+            (dist, optimum_quefrency) = diff, quefrency 
+    return optimum_quefrency
+
 def plot_2D_vectors_from_list(vector_list:list, graph_title:str)->None:
     x_coords = [point[0] for point in vector_list]
     y_coords = [point[1] for point in vector_list]

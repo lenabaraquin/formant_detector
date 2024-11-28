@@ -30,19 +30,25 @@ class Formants:
         self.samplerate = samplerate
         self.sound_waveform = list(samples)
 
-    def _extract_spectral_envelope(self, frame_waveform, lifter_cutoff_quefrency:int):
+    def _extract_spectral_envelope(self, analyzed_waveform):
         """from a waveform give his spectral envelope with the cepstrum method"""
-        spectrum = np.fft.rfft(frame_waveform, self.samplerate)
+        spectrum = np.fft.rfft(analyzed_waveform, self.samplerate)
         log10_magnitude_spectrum = np.log10(np.abs(spectrum))
         cepstrum = np.fft.irfft(log10_magnitude_spectrum)
-        liftred_cepstrum = [0 if i > lifter_cutoff_quefrency else x for i, x in enumerate(cepstrum)]
+        liftred_cepstrum = [0 if i > self.cutoff_quefrency else x for i, x in enumerate(cepstrum)]
         smoothed_spectrum = np.abs(np.fft.rfft(liftred_cepstrum))
         return list(smoothed_spectrum)
 
-    def _framing(self, frame_duration:float)->list:
+    def _framing(self)->list:
         """split the waveform in several frames"""
-        frame_size = int(self.samplerate * frame_duration)
+        frame_size = int(self.samplerate * self.frame_duration)
+        self.middle_frame = self.sound_waveform[len(self.sound_waveform)//2:len(self.sound_waveform)//2+frame_size]
         return [self.sound_waveform[i:i + frame_size] for i in range(0, len(self.sound_waveform), frame_size)]
+
+    def extract_middle_frame_spectral_envelope(self):
+        """give the spectral_envelope of the middle frame"""
+        self._framing()
+        return self._extract_spectral_envelope(self.middle_frame)
 
     @staticmethod
     def _extract_formants(spectral_envelope:list)->list:
@@ -60,11 +66,11 @@ class Formants:
 
     def get_formants_class(self)->list:
         """return a list of same class formant lists"""
-        frames = self._framing(self.frame_duration)
+        frames = self._framing()
         formants_class = []
         for i in range(len(frames)):
             frame = self._hamming_windowing(frames[i])
-            spectral_envelope = self._extract_spectral_envelope(frame, self.cutoff_quefrency)
+            spectral_envelope = self._extract_spectral_envelope(frame)
             formants = self._extract_formants(list(spectral_envelope))
             if i == 0:
                 for current_formant in formants:
@@ -80,12 +86,12 @@ class Formants:
         return formants_class
 
     def get_time_formant_vectors(self) -> list:
-        frames = self._framing(self.frame_duration)
+        frames = self._framing()
         formant_vectors = []
         for i in range(len(frames)):
             t = i*self.frame_duration
             frame = self._hamming_windowing(frames[i])
-            spectral_envelope = self._extract_spectral_envelope(frame, self.cutoff_quefrency)
+            spectral_envelope = self._extract_spectral_envelope(frame)
             formants = self._extract_formants(list(spectral_envelope))
             for formant in formants:
                 formant_vectors.append((t, formant))
@@ -98,36 +104,61 @@ class Formants:
             mean_formants.append(np.mean(formant_class))
         return mean_formants
 
-def ajust_cutoff_quefrency(file_path:str, frame_duration:float=0.1, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=50):
+def ajust_cutoff_quefrency(file_path:str, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=50, frame_duration:float=0.1):
+    """tests each quefrency in [min_quefrency,max_quefrency] and minimize the difference between firsts formants computed and expected first formants"""
     (dist, optimum_quefrency) = float('inf'), 0
     for quefrency in range(min_quefrency, max_quefrency):
         formants_for_quefrency = Formants(file_path, frame_duration, quefrency)
         mean_formants_for_quefrency = formants_for_quefrency.get_mean_formants()
         diff = 0
-        for i in range(len(expected_first_formants)):
-            diff += np.abs(expected_first_formants[i] - mean_formants_for_quefrency[i])
+        if len(mean_formants_for_quefrency)>len(expected_first_formants):
+            for i in range(len(expected_first_formants)):
+                diff += np.abs(expected_first_formants[i] - mean_formants_for_quefrency[i])
+        else:
+            diff = float('inf')
         if diff < dist:
             (dist, optimum_quefrency) = diff, quefrency 
     return optimum_quefrency
 
-def plot_2D_vectors_from_list(vector_list:list, graph_title:str)->None:
+def plot_2D_vectors_from_list(vector_list:list, graph_title:str, dot_style:str="o")->None:
+    """plot 2D vectors from a given coordinates list"""
     x_coords = [point[0] for point in vector_list]
     y_coords = [point[1] for point in vector_list]
 
-    plt.plot(x_coords, y_coords, "o")
+    plt.plot(x_coords, y_coords, dot_style)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(graph_title)
     plt.show()
 
+aaa_file_path = "test_sounds/aaa.wav"
+iii_file_path = "test_sounds/iii.wav"
+uuu_file_path = "test_sounds/uuu.wav"
 
-aaa = Formants("test_sounds/aaa.wav", 0.01, 35)
-iii = Formants("test_sounds/iii.wav", 0.01, 35)
-uuu = Formants("test_sounds/uuu.wav", 0.01, 35)
+#with tuned cutoff_quefrency
+aaa = Formants(aaa_file_path, 0.01, 31)
+iii = Formants(iii_file_path, 0.01, 38)
+uuu = Formants(uuu_file_path, 0.01, 49)
 
-aaa_formants = aaa.get_time_formant_vectors()
-iii_formants = iii.get_time_formant_vectors()
-uuu_formants = uuu.get_time_formant_vectors()
+#aaa_formants = aaa.get_time_formant_vectors()
+#iii_formants = iii.get_time_formant_vectors()
+#uuu_formants = uuu.get_time_formant_vectors()
+
+#aaa_expected_formants = [900, 1400, 2650]
+#iii_expected_formants = [255, 2100, 3650]
+#uuu_expected_formants = [350, 570, 2600]
+
+#print("[a] formants ", aaa.get_mean_formants())
+#print("[i] formants ", iii.get_mean_formants())
+#print("[u] formants ", uuu.get_mean_formants())
+
+plt.plot(0.85*np.log10(np.abs((np.fft.rfft(aaa.sound_waveform, aaa.samplerate)))))
+for i in range(10, 99):
+    aaa = Formants(aaa_file_path, 0.1, i)
+    color = i
+    color = "#" + str(color) + "0080"
+    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
+plt.show()
 
 
 

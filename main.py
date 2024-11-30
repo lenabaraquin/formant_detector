@@ -144,23 +144,31 @@ uuu = Formants(uuu_file_path, 0.01, 49)
 #iii_formants = iii.get_time_formant_vectors()
 #uuu_formants = uuu.get_time_formant_vectors()
 
-#aaa_expected_formants = [900, 1400, 2650]
-#iii_expected_formants = [255, 2100, 3650]
-#uuu_expected_formants = [350, 570, 2600]
+aaa_expected_formants = [900, 1400, 2650]
+iii_expected_formants = [255, 2100, 3650]
+uuu_expected_formants = [350, 570, 2600]
 
 #print("[a] formants ", aaa.get_mean_formants())
 #print("[i] formants ", iii.get_mean_formants())
 #print("[u] formants ", uuu.get_mean_formants())
 
-plt.plot(0.85*np.log10(np.abs((np.fft.rfft(aaa.sound_waveform, aaa.samplerate)))))
-for i in range(10, 99):
-    aaa = Formants(aaa_file_path, 0.1, i)
-    color = i
-    color = "#" + str(color) + "0080"
-    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
+#plt.plot(0.85*np.log10(np.abs((np.fft.rfft(aaa.sound_waveform, aaa.samplerate)))))
+#for i in range(10, 99):
+#    aaa = Formants(aaa_file_path, 0.1, i)
+#    color = i
+#    color = "#" + str(color) + "0080"
+#    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
+#plt.show()
+
+for i in range(1, 255):
+    iii = Formants(iii_file_path, 0.1, i)
+    formants_for_i = iii._extract_formants(iii._extract_spectral_envelope(iii.sound_waveform))
+    for j in range(len(formants_for_i)):
+        print(i, j)
+        color = "#" + format(2*j, "02x") + "0080"
+        print(color)
+        plt.plot(i, formants_for_i[j], "o", color=color)
+for i in iii_expected_formants:
+    plt.axhline(y=i, color="b", linestyle="-")
+
 plt.show()
-
-
-
-
-

@@ -104,7 +104,7 @@ class Formants:
             mean_formants.append(np.mean(formant_class))
         return mean_formants
 
-def ajust_cutoff_quefrency(file_path:str, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=50, frame_duration:float=0.1):
+def ajust_cutoff_quefrency(file_path:str, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=150, frame_duration:float=0.1):
     """tests each quefrency in [min_quefrency,max_quefrency] and minimize the difference between firsts formants computed and expected first formants"""
     (dist, optimum_quefrency) = float('inf'), 0
     for quefrency in range(min_quefrency, max_quefrency):
@@ -115,7 +115,7 @@ def ajust_cutoff_quefrency(file_path:str, expected_first_formants:list, min_quef
             for i in range(len(expected_first_formants)):
                 diff += np.abs(expected_first_formants[i] - mean_formants_for_quefrency[i])
         else:
-            diff = float('inf')
+            raise Exception("There is not enough values in expected_first_formants list to evaluate the distance")
         if diff < dist:
             (dist, optimum_quefrency) = diff, quefrency 
     return optimum_quefrency
@@ -160,15 +160,15 @@ uuu_expected_formants = [350, 570, 2600]
 #    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
 #plt.show()
 
-for i in range(1, 255):
-    iii = Formants(iii_file_path, 0.1, i)
-    formants_for_i = iii._extract_formants(iii._extract_spectral_envelope(iii.sound_waveform))
+for i in range(1, 999):
+    uuu = Formants(uuu_file_path, 0.1, i)
+    formants_for_i = uuu._extract_formants(uuu._extract_spectral_envelope(uuu.sound_waveform))
     for j in range(len(formants_for_i)):
         print(i, j)
-        color = "#" + format(2*j, "02x") + "0080"
+        color = "#" + format(120, "02x") + "0080"
         print(color)
         plt.plot(i, formants_for_i[j], "o", color=color)
-for i in iii_expected_formants:
+for i in uuu_expected_formants:
     plt.axhline(y=i, color="b", linestyle="-")
 
 plt.show()

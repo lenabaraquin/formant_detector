@@ -2,6 +2,7 @@ import struct
 import wave
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
 class Formants:
     def __init__(self, file_path:str, frame_duration:float=0.1, cutoff_quefrency:int=35) -> None:
@@ -58,6 +59,20 @@ class Formants:
             if spectral_envelope[i] > spectral_envelope[i-1] and spectral_envelope[i] > spectral_envelope[i+1]: 
                 formants.append(i)
         return formants
+
+    def extract_spectrogram(self):
+        spectrogram = []
+        frames = self._framing()
+        for frame in frames:
+            spectral_envelope = self._extract_spectral_envelope(frame)
+            for frequency in spectral_envelope:
+                coordinates = (0,0)
+                intensity = 0
+                spectrogram.append((coordinates, intensity))
+    #_framing
+    #spectral envelope
+    #add coordinates in time frequency space with intensity value for each spectral envelope value to the spectrogram list
+        return spectrogram
 
     @staticmethod
     def _hamming_windowing(frame:list)->list:
@@ -160,15 +175,17 @@ uuu_expected_formants = [350, 570, 2600]
 #    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
 #plt.show()
 
-for i in range(1, 999):
-    uuu = Formants(uuu_file_path, 0.1, i)
-    formants_for_i = uuu._extract_formants(uuu._extract_spectral_envelope(uuu.sound_waveform))
-    for j in range(len(formants_for_i)):
-        print(i, j)
-        color = "#" + format(120, "02x") + "0080"
-        print(color)
-        plt.plot(i, formants_for_i[j], "o", color=color)
-for i in uuu_expected_formants:
-    plt.axhline(y=i, color="b", linestyle="-")
+#for i in range(1, 999):
+#uuu = Formants(uuu_file_path, 0.1, i)
+#formants_for_i = uuu._extract_formants(uuu._extract_spectral_envelope(uuu.sound_waveform))
+#for j in range(len(formants_for_i)):
+#print(i, j)
+#color = "#" + format(120, "02x") + "0080"
+#print(color)
+#plt.plot(i, formants_for_i[j], "o", color=color)
+#for i in uuu_expected_formants:
+#plt.axhline(y=i, color="b", linestyle="-")
 
-plt.show()
+#plt.show()
+(a, b) = (len)
+spectrogram = Image.new("L", (a, b))

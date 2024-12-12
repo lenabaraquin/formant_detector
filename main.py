@@ -46,6 +46,38 @@ class Formants:
         self.middle_frame = self.sound_waveform[len(self.sound_waveform)//2:len(self.sound_waveform)//2+frame_size]
         return [self.sound_waveform[i:i + frame_size] for i in range(0, len(self.sound_waveform), frame_size)]
 
+    @staticmethod
+    def _hamming_windowing(frame:list)->list:
+        """windowing with the hamming function"""
+        return list(frame*np.hamming(len(frame)))
+
+    def get_spectrogram(self)->list:
+        """give a list of (time, frequency, intensity) tuples, the time window length depend on self.frame_duration"""
+        spectrogram = []
+        splited_waveform = self._framing()
+        ham_splited_waveform = []
+        for frame in splited_waveform:
+            ham_splited_waveform.append(self._hamming_windowing(frame))
+        for i in range(len(ham_splited_waveform)):
+            frame = ham_splited_waveform[i]
+            time = i*self.frame_duration
+            spectral_envelope = self._extract_spectral_envelope(frame)
+            for j in range(len(spectral_envelope)):
+                frequency = j
+                intensity = spectral_envelope[j]
+                spectrogram.append((time, frequency, intensity))
+        return spectrogram
+
+    def plot_spectrogram(self):
+        """plot the spectrogram using the PIL library"""
+
+
+
+
+
+
+
+
     def extract_middle_frame_spectral_envelope(self):
         """give the spectral_envelope of the middle frame"""
         self._framing()
@@ -73,11 +105,6 @@ class Formants:
     #spectral envelope
     #add coordinates in time frequency space with intensity value for each spectral envelope value to the spectrogram list
         return spectrogram
-
-    @staticmethod
-    def _hamming_windowing(frame:list)->list:
-        """windowing with the hamming function"""
-        return list(frame*np.hamming(len(frame)))
 
     def get_formants_class(self)->list:
         """return a list of same class formant lists"""
@@ -174,6 +201,7 @@ uuu_expected_formants = [350, 570, 2600]
 #    color = "#" + str(color) + "0080"
 #    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
 #plt.show()
+print(aaa.get_spectrogram())
 
 #for i in range(1, 999):
 #uuu = Formants(uuu_file_path, 0.1, i)
@@ -187,5 +215,14 @@ uuu_expected_formants = [350, 570, 2600]
 #plt.axhline(y=i, color="b", linestyle="-")
 
 #plt.show()
-(a, b) = (len)
-spectrogram = Image.new("L", (a, b))
+#(a, b) = (len)
+spectrogram = aaa.get_spectrogram()
+a, b = 100, 100
+to_print_spectrogram = Image.new("RGB", (a, b), "white")
+for i in spectrogram:
+    if i[1]<99:
+        x = int(i[0]*100)%100
+        y = int(i[1])%100
+        color_value = int(i[2])%255
+        to_print_spectrogram.putpixel((x, y), (color_value, color_value, color_value))
+to_print_spectrogram.show()

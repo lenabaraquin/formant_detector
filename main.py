@@ -10,6 +10,8 @@ class Formants:
         self.frame_duration = frame_duration
         self.cutoff_quefrency = cutoff_quefrency
         self._extract_waveform()
+        self._extract_spectrogram()
+
 
     def _extract_waveform(self)-> None:
         """from a file path extract samplerate and list of samples"""
@@ -30,6 +32,7 @@ class Formants:
             raise ValueError(f"Unsupported sample width: {sampwidth} bytes")
         self.samplerate = samplerate
         self.sound_waveform = list(samples)
+        self.sound_duration = len(samples)/samplerate
 
     def _extract_spectral_envelope(self, analyzed_waveform):
         """from a waveform give his spectral envelope with the cepstrum method"""
@@ -51,14 +54,16 @@ class Formants:
         """windowing with the hamming function"""
         return list(frame*np.hamming(len(frame)))
 
-    def get_spectrogram(self)->list:
-        """give a list of (time, frequency, intensity) tuples, the time window length depend on self.frame_duration"""
+    def _extract_spectrogram(self)->None:
+        """return a list of (time, frequency, intensity) tuples, the time window length depend on self.frame_duration"""
         spectrogram = []
+        matrix_spectrogram = []
         splited_waveform = self._framing()
         ham_splited_waveform = []
         for frame in splited_waveform:
             ham_splited_waveform.append(self._hamming_windowing(frame))
         for i in range(len(ham_splited_waveform)):
+            time_slice = [] #list to add to matrix_spectrogram
             frame = ham_splited_waveform[i]
             time = i*self.frame_duration
             spectral_envelope = self._extract_spectral_envelope(frame)
@@ -66,22 +71,10 @@ class Formants:
                 frequency = j
                 intensity = spectral_envelope[j]
                 spectrogram.append((time, frequency, intensity))
-        return spectrogram
-
-    def plot_spectrogram(self):
-        """plot the spectrogram using the PIL library"""
-
-
-
-
-
-
-
-
-    def extract_middle_frame_spectral_envelope(self):
-        """give the spectral_envelope of the middle frame"""
-        self._framing()
-        return self._extract_spectral_envelope(self.middle_frame)
+                time_slice.append(intensity)
+            matrix_spectrogram.append(time_slice)
+        self.spectrogram = spectrogram
+        self.matrix_spectrogram = matrix_spectrogram
 
     @staticmethod
     def _extract_formants(spectral_envelope:list)->list:
@@ -92,137 +85,26 @@ class Formants:
                 formants.append(i)
         return formants
 
-    def extract_spectrogram(self):
-        spectrogram = []
-        frames = self._framing()
-        for frame in frames:
-            spectral_envelope = self._extract_spectral_envelope(frame)
-            for frequency in spectral_envelope:
-                coordinates = (0,0)
-                intensity = 0
-                spectrogram.append((coordinates, intensity))
-    #_framing
-    #spectral envelope
-    #add coordinates in time frequency space with intensity value for each spectral envelope value to the spectrogram list
-        return spectrogram
-
-    def get_formants_class(self)->list:
-        """return a list of same class formant lists"""
-        frames = self._framing()
-        formants_class = []
-        for i in range(len(frames)):
-            frame = self._hamming_windowing(frames[i])
-            spectral_envelope = self._extract_spectral_envelope(frame)
-            formants = self._extract_formants(list(spectral_envelope))
-            if i == 0:
-                for current_formant in formants:
-                    formants_class.append([current_formant])
-            if i != 0:
-                for current_formant in formants:
-                    min_distance = float('inf')
-                    nearest_formant_class = [] #init
-                    for formant_class in formants_class:
-                        if np.abs(formant_class[-1] - current_formant) < min_distance:
-                            min_distance, nearest_formant_class = np.abs(formant_class[-1] - current_formant), formant_class
-                    nearest_formant_class.append(current_formant)
-        return formants_class
-
-    def get_time_formant_vectors(self) -> list:
-        frames = self._framing()
-        formant_vectors = []
-        for i in range(len(frames)):
-            t = i*self.frame_duration
-            frame = self._hamming_windowing(frames[i])
-            spectral_envelope = self._extract_spectral_envelope(frame)
-            formants = self._extract_formants(list(spectral_envelope))
-            for formant in formants:
-                formant_vectors.append((t, formant))
-        return formant_vectors
-
-    def get_mean_formants(self)->list:
-        formants_class = self.get_formants_class()
-        mean_formants = []
-        for formant_class in formants_class:
-            mean_formants.append(np.mean(formant_class))
-        return mean_formants
-
-def ajust_cutoff_quefrency(file_path:str, expected_first_formants:list, min_quefrency:int=10, max_quefrency:int=150, frame_duration:float=0.1):
-    """tests each quefrency in [min_quefrency,max_quefrency] and minimize the difference between firsts formants computed and expected first formants"""
-    (dist, optimum_quefrency) = float('inf'), 0
-    for quefrency in range(min_quefrency, max_quefrency):
-        formants_for_quefrency = Formants(file_path, frame_duration, quefrency)
-        mean_formants_for_quefrency = formants_for_quefrency.get_mean_formants()
-        diff = 0
-        if len(mean_formants_for_quefrency)>len(expected_first_formants):
-            for i in range(len(expected_first_formants)):
-                diff += np.abs(expected_first_formants[i] - mean_formants_for_quefrency[i])
-        else:
-            raise Exception("There is not enough values in expected_first_formants list to evaluate the distance")
-        if diff < dist:
-            (dist, optimum_quefrency) = diff, quefrency 
-    return optimum_quefrency
-
-def plot_2D_vectors_from_list(vector_list:list, graph_title:str, dot_style:str="o")->None:
-    """plot 2D vectors from a given coordinates list"""
-    x_coords = [point[0] for point in vector_list]
-    y_coords = [point[1] for point in vector_list]
-
-    plt.plot(x_coords, y_coords, dot_style)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(graph_title)
-    plt.show()
+    def get_formants_matrix(self)->list:
+        formants_matrix = []
+        for time_slice in self.matrix_spectrogram:
+            formants_matrix.append(self._extract_formants(time_slice))
+        return formants_matrix
 
 aaa_file_path = "test_sounds/aaa.wav"
 iii_file_path = "test_sounds/iii.wav"
 uuu_file_path = "test_sounds/uuu.wav"
 
 #with tuned cutoff_quefrency
-aaa = Formants(aaa_file_path, 0.01, 31)
-iii = Formants(iii_file_path, 0.01, 38)
-uuu = Formants(uuu_file_path, 0.01, 49)
+aaa = Formants(aaa_file_path, 0.2, 31)
+iii = Formants(iii_file_path, 0.2, 38)
+uuu = Formants(uuu_file_path, 0.2, 49)
 
-#aaa_formants = aaa.get_time_formant_vectors()
-#iii_formants = iii.get_time_formant_vectors()
-#uuu_formants = uuu.get_time_formant_vectors()
+print(aaa.sound_duration)
+print(aaa.matrix_spectrogram)
+
+
 
 aaa_expected_formants = [900, 1400, 2650]
 iii_expected_formants = [255, 2100, 3650]
 uuu_expected_formants = [350, 570, 2600]
-
-#print("[a] formants ", aaa.get_mean_formants())
-#print("[i] formants ", iii.get_mean_formants())
-#print("[u] formants ", uuu.get_mean_formants())
-
-#plt.plot(0.85*np.log10(np.abs((np.fft.rfft(aaa.sound_waveform, aaa.samplerate)))))
-#for i in range(10, 99):
-#    aaa = Formants(aaa_file_path, 0.1, i)
-#    color = i
-#    color = "#" + str(color) + "0080"
-#    plt.plot(aaa.extract_middle_frame_spectral_envelope(), color)
-#plt.show()
-print(aaa.get_spectrogram())
-
-#for i in range(1, 999):
-#uuu = Formants(uuu_file_path, 0.1, i)
-#formants_for_i = uuu._extract_formants(uuu._extract_spectral_envelope(uuu.sound_waveform))
-#for j in range(len(formants_for_i)):
-#print(i, j)
-#color = "#" + format(120, "02x") + "0080"
-#print(color)
-#plt.plot(i, formants_for_i[j], "o", color=color)
-#for i in uuu_expected_formants:
-#plt.axhline(y=i, color="b", linestyle="-")
-
-#plt.show()
-#(a, b) = (len)
-spectrogram = aaa.get_spectrogram()
-a, b = 100, 100
-to_print_spectrogram = Image.new("RGB", (a, b), "white")
-for i in spectrogram:
-    if i[1]<99:
-        x = int(i[0]*100)%100
-        y = int(i[1])%100
-        color_value = int(i[2])%255
-        to_print_spectrogram.putpixel((x, y), (color_value, color_value, color_value))
-to_print_spectrogram.show()

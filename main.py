@@ -96,13 +96,31 @@ iii_file_path = "test_sounds/iii.wav"
 uuu_file_path = "test_sounds/uuu.wav"
 
 #with tuned cutoff_quefrency
-aaa = Formants(aaa_file_path, 0.2, 31)
+aaa = Formants(aaa_file_path, 0.01, 31)
 iii = Formants(iii_file_path, 0.2, 38)
 uuu = Formants(uuu_file_path, 0.2, 49)
 
-print(aaa.sound_duration)
-print(aaa.matrix_spectrogram)
+# Dimensions de l'image
+width, height = 1000, 4000
 
+# Créer une image en nuances de gris
+image = Image.new('L', (width, height))
+
+# Accéder à l'objet PixelAccess
+pixels = image.load()
+
+# Modifier les pixels pour créer un dégradé horizontal
+for x in range(len(aaa.matrix_spectrogram)):
+    for y in range(len(aaa.matrix_spectrogram[x])):
+        # Valeur du gris (ici basée sur la position x)
+        if x < width/10 and y < height:
+            gray_value = int((aaa.matrix_spectrogram[x][y]*1000) % 255)
+            for i in range(1, 10):
+                pixels[10*(x+i), y] = gray_value
+                print(gray_value)
+
+# Sauvegarder ou afficher l'image
+image.show()  # Pour afficher
 
 
 aaa_expected_formants = [900, 1400, 2650]

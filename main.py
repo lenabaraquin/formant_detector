@@ -122,7 +122,7 @@ for x in range(len(aaa.matrix_spectrogram)):
 # Sauvegarder ou afficher l'image
 image.show()  # Pour afficher
 
-
+#expected firsts formants for test 
 aaa_expected_formants = [900, 1400, 2650]
 iii_expected_formants = [255, 2100, 3650]
 uuu_expected_formants = [350, 570, 2600]

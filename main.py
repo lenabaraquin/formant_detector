@@ -54,28 +54,6 @@ class Formants:
         """windowing with the hamming function"""
         return list(frame*np.hamming(len(frame)))
 
-    def _extract_spectrogram(self)->None:
-        """return a list of (time, frequency, intensity) tuples, the time window length depend on self.frame_duration"""
-        spectrogram = []
-        matrix_spectrogram = []
-        splited_waveform = self._framing()
-        ham_splited_waveform = []
-        for frame in splited_waveform:
-            ham_splited_waveform.append(self._hamming_windowing(frame))
-        for i in range(len(ham_splited_waveform)):
-            time_slice = [] #list to add to matrix_spectrogram
-            frame = ham_splited_waveform[i]
-            time = i*self.frame_duration
-            spectral_envelope = self._extract_spectral_envelope(frame)
-            for j in range(len(spectral_envelope)):
-                frequency = j
-                intensity = spectral_envelope[j]
-                spectrogram.append((time, frequency, intensity))
-                time_slice.append(intensity)
-            matrix_spectrogram.append(time_slice)
-        self.spectrogram = spectrogram
-        self.matrix_spectrogram = matrix_spectrogram
-
     @staticmethod
     def _extract_formants(spectral_envelope:list)->list:
         """compute formants from the spectral envelope of a waveform""" #ameliorer la fonction de recherche de maxima locaux pour qu'elle soit robuste en cas de plateaux
@@ -85,11 +63,33 @@ class Formants:
                 formants.append(i)
         return formants
 
-    def get_formants_matrix(self)->list:
-        formants_matrix = []
-        for time_slice in self.matrix_spectrogram:
-            formants_matrix.append(self._extract_formants(time_slice))
-        return formants_matrix
+    def _extract_spectrogram(self)->None:
+        """return a list of (time, frequency, intensity) tuples, the time window length depend on self.frame_duration"""
+        spectrogram = []
+        matrix_spectrogram = []
+        splited_waveform = self._framing()
+        ham_splited_waveform = []
+        formants_list = ([], []) #frequency value, time
+        for frame in splited_waveform:
+            ham_splited_waveform.append(self._hamming_windowing(frame))
+        for i in range(len(ham_splited_waveform)):
+            time_slice = [] #list to add to matrix_spectrogram
+            frame = ham_splited_waveform[i]
+            time = i*self.frame_duration
+            spectral_envelope = self._extract_spectral_envelope(frame)
+            formant_list = self._extract_formants(spectral_envelope)
+            for j in range(len(formant_list)):
+                formants_list[0].append(time)
+                formants_list[1].append(formant_list[j])
+            for j in range(len(spectral_envelope)):
+                frequency = j
+                intensity = spectral_envelope[j]
+                spectrogram.append((time, frequency, intensity))
+                time_slice.append(intensity)
+            matrix_spectrogram.append(time_slice)
+        self.spectrogram = spectrogram
+        self.matrix_spectrogram = matrix_spectrogram
+        self.formants = formants_list
 
 aaa_file_path = "test_sounds/aaa.wav"
 iii_file_path = "test_sounds/iii.wav"
@@ -100,29 +100,32 @@ aaa = Formants(aaa_file_path, 0.01, 31)
 iii = Formants(iii_file_path, 0.2, 38)
 uuu = Formants(uuu_file_path, 0.2, 49)
 
-# Dimensions de l'image
-width, height = 1000, 4000
-
-# Créer une image en nuances de gris
-image = Image.new('L', (width, height))
-
-# Accéder à l'objet PixelAccess
-pixels = image.load()
-
-# Modifier les pixels pour créer un dégradé horizontal
-for x in range(len(aaa.matrix_spectrogram)):
-    for y in range(len(aaa.matrix_spectrogram[x])):
-        # Valeur du gris (ici basée sur la position x)
-        if x < width/10 and y < height:
-            gray_value = int((aaa.matrix_spectrogram[x][y]*1000) % 255)
-            for i in range(1, 10):
-                pixels[10*(x+i), y] = gray_value
-                print(gray_value)
-
-# Sauvegarder ou afficher l'image
-image.show()  # Pour afficher
-
 #expected firsts formants for test 
 aaa_expected_formants = [900, 1400, 2650]
 iii_expected_formants = [255, 2100, 3650]
 uuu_expected_formants = [350, 570, 2600]
+
+## Dimensions de l'image
+#width, height = 1000, 4000
+#
+## Créer une image en nuances de gris
+#image = Image.new('L', (width, height))
+#
+## Accéder à l'objet PixelAccess
+#pixels = image.load()
+#
+## Modifier les pixels pour créer un dégradé horizontal
+#for x in range(len(aaa.matrix_spectrogram)):
+#    for y in range(len(aaa.matrix_spectrogram[x])):
+#        # Valeur du gris (ici basée sur la position x)
+#        if x < width/10 and y < height:
+#            gray_value = int((aaa.matrix_spectrogram[x][y]*1000) % 255)
+#            for i in range(1, 10):
+#                pixels[10*(x+i), y] = gray_value
+#                print(gray_value)
+#
+## Sauvegarder ou afficher l'image
+#image.show()  # Pour afficher
+
+plt.plot(aaa.formants[0], aaa.formants[1], 'o')
+plt.show()
